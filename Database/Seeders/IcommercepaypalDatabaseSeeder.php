@@ -5,77 +5,81 @@ namespace Modules\Icommercepaypal\Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Icommerce\Entities\PaymentMethod;
+use Modules\Isite\Jobs\ProcessSeeds;
 
 class IcommercepaypalDatabaseSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
-    public function run()
-    {
+  /**
+   * Run the database seeds.
+   *
+   * @return void
+   */
+  public function run()
+  {
 
-        Model::unguard();
+    Model::unguard();
+    ProcessSeeds::dispatch([
+      "baseClass" => "\Modules\Icommercepaypal\Database\Seeders",
+      "seeds" => ["IcommercepaypalModuleTableSeeder"]
+    ]);
 
-        $this->call(IcommercepaypalModuleTableSeeder::class);
-        
-        if(!is_module_enabled('Icommercepaypal')){
-            $this->command->alert("This module: Icommercepaypal is DISABLED!! , please enable the module and then run the seed");
-            exit();
-        }
+    if (!is_module_enabled('Icommercepaypal')) {
+      $this->command->alert("This module: Icommercepaypal is DISABLED!! , please enable the module and then run the seed");
+      exit();
+    }
 
-        //Validation if the module has been installed before
-        $name = config('asgard.icommercepaypal.config.paymentName');
-        $result = PaymentMethod::where('name',$name)->first();
+    //Validation if the module has been installed before
+    $name = config('asgard.icommercepaypal.config.paymentName');
+    $result = PaymentMethod::where('name', $name)->first();
 
-        if(!$result){
+    if (!$result) {
 
-            $options['init'] = "Modules\Icommercepaypal\Http\Controllers\Api\IcommercePaypalApiController";
-            $options['mainimage'] = null;
-            $options['clientId'] = "";
-            $options['clientSecret'] = "";
-            $options['mode'] = "sandbox";
-            $options['currency'] = "USD";
-            $options['minimunAmount'] = 0;
-            $options['maximumAmount'] = null;
-            $options['showInCurrencies'] = ["USD"];
-            
-            $titleTrans = 'Paypal';
-            $descriptionTrans = 'icommercepaypal::icommercepaypals.description';
+      $options['init'] = "Modules\Icommercepaypal\Http\Controllers\Api\IcommercePaypalApiController";
+      $options['mainimage'] = null;
+      $options['clientId'] = "";
+      $options['clientSecret'] = "";
+      $options['mode'] = "sandbox";
+      $options['currency'] = "USD";
+      $options['minimunAmount'] = 0;
+      $options['maximumAmount'] = null;
+      $options['showInCurrencies'] = ["USD"];
 
-            $params = array(
-                'name' => $name,
-                'status' => 1,
-                'options' => $options
-            );
-            $paymentMethod = PaymentMethod::create($params);
+      $titleTrans = 'Paypal';
+      $descriptionTrans = 'icommercepaypal::icommercepaypals.description';
 
-            $this->addTranslation($paymentMethod,'en',$titleTrans,$descriptionTrans);
-            $this->addTranslation($paymentMethod,'es',$titleTrans,$descriptionTrans);
+      $params = array(
+        'name' => $name,
+        'status' => 1,
+        'options' => $options
+      );
+      $paymentMethod = PaymentMethod::create($params);
 
-        }else{
+      $this->addTranslation($paymentMethod, 'en', $titleTrans, $descriptionTrans);
+      $this->addTranslation($paymentMethod, 'es', $titleTrans, $descriptionTrans);
 
-            $this->command->alert("This method has already been installed !!");
-            
-        }
+    } else {
 
+      $this->command->alert("This method has already been installed !!");
 
     }
 
-    /*
-    * Add Translations
-    * PD: New Alternative method due to problems with astronomic translatable
-    **/
-    public function addTranslation($paymentMethod,$locale,$title,$description){
 
-      \DB::table('icommerce__payment_method_translations')->insert([
-          'title' => trans($title,[],$locale),
-          'description' => trans($description,[],$locale),
-          'payment_method_id' => $paymentMethod->id,
-          'locale' => $locale
-      ]);
+  }
 
-    }
+  /*
+  * Add Translations
+  * PD: New Alternative method due to problems with astronomic translatable
+  **/
+  public function addTranslation($paymentMethod, $locale, $title, $description)
+  {
+
+    \DB::table('icommerce__payment_method_translations')->insert([
+      'title' => trans($title, [], $locale),
+      'description' => trans($description, [], $locale),
+      'payment_method_id' => $paymentMethod->id,
+      'locale' => $locale
+    ]);
+
+  }
 
 }
